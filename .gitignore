@@ -1,0 +1,14 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Logs
+*.log
+
+# Jupyter Notebook
+.ipynb_checkpoints
+debug.ipynb
+
+# VS Code
+.vscode/
