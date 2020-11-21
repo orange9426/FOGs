@@ -15,7 +15,7 @@ def parse_args():
     # Argments for model
     parser.add_argument('--env', default='Kuhn Poker', type=str,
                         help='Specify the env to solve {Tiger}')
-    parser.add_argument('--solver', default='POMCP', type=str,
+    parser.add_argument('--solver', default='CFR', type=str,
                         help='Specify the solver to use {POMCP}')
     parser.add_argument('--seed', default=int(time.time()), type=int,
                         help='Specify the random seed for numpy.random')
@@ -46,7 +46,7 @@ def parse_args():
     parser.add_argument('--me_epsilon', default=0.5, type=float,
                         help='Epsilon for Maximum Entropy algorithm used by MCTS')
 
-    parser.set_defaults(quiet=False)
+    parser.set_defaults(quiet=True)
 
     # Cast to a dictionary
     args = vars(parser.parse_args())

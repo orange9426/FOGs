@@ -17,40 +17,42 @@ def run(env, solver, args):
     print_divider('large')
 
     # Run for multiple epochs
-    for epoch in tqdm.tqdm(range(args['n_epochs'])):
-        # Show epochs progress
-        if not args['quiet']:
-            print_divider('medium')
-            console(2, module, "Epoch: " + str(epoch + 1))
+    # for epoch in tqdm.tqdm(range(args['n_epochs'])):
+    #     # Show epochs progress
+    #     if not args['quiet']:
+    #         print_divider('medium')
+    #         console(2, module, "Epoch: " + str(epoch + 1))
 
-        epoch_start = time.time()
+    #     epoch_start = time.time()
 
         # Play a game with policies solved by the solver
-        game_history = _play_game(env, solver, args)
+    game_history = _play_game(env, solver, args)
 
-        # Record the results
-        results.time.add(time.time() - epoch_start)
-        results.update_reward_results(
-            game_history.undiscounted_return(),
-            game_history.discounted_return(args['discount']))
+        # # Record the results
+        # results.time.add(time.time() - epoch_start)
+        # results.update_reward_results(
+        #     game_history.undiscounted_return(),
+        #     game_history.discounted_return(args['discount']))
 
-        if not args['quiet']:
-            print_divider('medium')
+    # if not args['quiet']:
+    #     print_divider('medium')
 
-    # Show the results
-    results.show(args['n_epochs'])
+    # # Show the results
+    # results.show(args['n_epochs'])
 
-    # Write the results to the log
-    _log_result(results, args)
+    # # Write the results to the log
+    # _log_result(results, args)
 
 
 def _play_game(env, solver, args):
     """Plays a game with policies solved by the solver."""
     solver.reset_for_epoch()
 
-    game_history = solver.solve_game(env)
+    policy = solver.solve_game(env)
 
-    return game_history
+    # game_history = solver.play_game(env)
+
+    return policy#, game_history
 
 
 def _log_result(result, args):

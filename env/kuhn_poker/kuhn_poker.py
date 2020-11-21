@@ -23,6 +23,7 @@ class KuhnPoker(Environment):
 
         self.name = 'Kuhn Poker'
         self.multi_agent = True
+        self.num_players = 2
 
     def initial_state(self):
         """Get a new initial world state."""

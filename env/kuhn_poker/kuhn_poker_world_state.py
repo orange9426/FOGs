@@ -41,10 +41,10 @@ class WorldState(object):
         else:
             return [Action(0, self.player), Action(1, self.player)]
 
-    def chance_outcome(self):
+    def chance_outcomes(self):
         assert self.player == -1  # is chance
         action_list = self.legal_actions()
-        prob_list = [1 / len(action_list) for _ in len(action_list)]
+        prob_list = [1 / len(action_list) for _ in range(len(action_list))]
         return action_list, prob_list
 
     def to_string(self):
