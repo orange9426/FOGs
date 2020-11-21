@@ -69,10 +69,11 @@ class History(list):
 
     def to_string(self):
         # Append the first world state string
-        string = self[0].next_state.to_string() + ' -> '
+        string = self[0].next_state.to_string()
+        for record in self[1:]:
+            string += ' -> ' + record.action.to_string() + \
+                ' -> ' + record.next_state.to_string()
 
-        string += ' -> '.join(record.action.to_string() + ' -> ' +
-                              record.state.to_string() for record in self[1:])
         return string
 
     def __eq__(self, other):
