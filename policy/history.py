@@ -1,4 +1,4 @@
-from statistic.step_record import StepRecord
+from policy.step_record import StepRecord
 import numpy as np
 
 

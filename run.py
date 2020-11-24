@@ -1,4 +1,4 @@
-from statistic.results import Results
+from util.results import Results
 from util.console import console
 from util.divider import print_divider
 
@@ -9,54 +9,69 @@ import tqdm
 module = 'RUN'
 
 
-def run(env, solver, args):
+def run(solver, args):
     """Run multiple epochs as an experiment."""
-    # Save all results in the experiment
-    results = Results()
 
+    print('Envirinment: %s, Solver: %s' % (args['solver'], args['env']))
     print_divider('large')
 
-    # Run for multiple epochs
-    # for epoch in tqdm.tqdm(range(args['n_epochs'])):
-    #     # Show epochs progress
-    #     if not args['quiet']:
-    #         print_divider('medium')
-    #         console(2, module, "Epoch: " + str(epoch + 1))
+    if solver.online:
+        # Save all results in the experiment
+        results = Results()
 
-    #     epoch_start = time.time()
+        # Run for multiple epochs
+        for epoch in tqdm.tqdm(range(args['n_epochs']), unit='epoch'):
+            # Show epochs progress
+            if not args['quiet']:
+                print_divider('medium')
+                console(2, module, "Epoch: " + str(epoch + 1))
 
-        # Play a game with policies solved by the solver
-    game_history = _play_game(env, solver, args)
+            epoch_start = time.time()
 
-        # # Record the results
-        # results.time.add(time.time() - epoch_start)
-        # results.update_reward_results(
-        #     game_history.undiscounted_return(),
-        #     game_history.discounted_return(args['discount']))
+            # Play a game for online solvers
+            game_history = _play_game(solver)
 
-    # if not args['quiet']:
-    #     print_divider('medium')
+            # Record the results
+            results.time.add(time.time() - epoch_start)
+            results.update_reward_results(
+                game_history.undiscounted_return(),
+                game_history.discounted_return(args['discount']))
 
-    # # Show the results
-    # results.show(args['n_epochs'])
+        if not args['quiet']:
+            print_divider('medium')
 
-    # # Write the results to the log
-    # _log_result(results, args)
+        # Show the results
+        results.show(args['n_epochs'])
+        # Write the results to the log
+        _log_result(results, args)
+
+    else:  # train the policy offline
+        policy = _train_policy(solver)
 
 
-def _play_game(env, solver, args):
-    """Plays a game with policies solved by the solver."""
+def _play_game(solver):
+    """Plays a game for online solver."""
+
     solver.reset_for_epoch()
 
-    policy = solver.solve_game(env)
+    game_history = solver.play_game()
 
-    # game_history = solver.play_game(env)
+    return game_history
 
-    return policy#, game_history
+
+def _train_policy(solver):
+    """Get the policy trained by solver"""
+
+    solver.reset_for_epoch()
+
+    policy = solver.train_policy()
+
+    return policy
 
 
 def _log_result(result, args):
     """Write the running result to the log."""
+
     logger = logging.getLogger(args['env'] + ': ' + args['solver'])
 
     # Log the results for different solvers
@@ -72,7 +87,7 @@ def _log_result(result, args):
                      result.discounted_return.std_err()) + '\t' +
                     'ave time/epoch: %.3f' % result.time.mean)
 
-    elif args['solver'] == 'ME-POMCP':
+    elif args['solver'] == 'MEPOP':
         logger.info('epochs: %d' % args['n_epochs'] + '\t' +
                     'simulations: %d' % args['n_sims'] + '\t' +
                     'me_tau: %.3f' % args['me_tau'] + '\t' +

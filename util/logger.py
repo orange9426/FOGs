@@ -2,7 +2,7 @@ import logging
 import logging.handlers
 import os
 
-LOG_DIR = 'log'
+LOG_DIR = 'results/log'
 
 my_dir = os.path.dirname(__file__)
 

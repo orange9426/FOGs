@@ -13,6 +13,7 @@ class ObservationNode(object):
 
     def find_child_by_e2w(self, tau, epsilon):
         """Randomly returns a child action node according to e2w policy."""
+
         # assert self.children is not None
         if self.visit_count == 0:
             prob_list = [1 / len(self.children)] * len(self.children)
@@ -32,6 +33,7 @@ class ObservationNode(object):
 
     def find_child(self, action):
         """Returns the child action node according to the given action."""
+
         candi = [c for c in self.children if c.action == action]
         if candi:
             return np.random.choice(candi)
@@ -40,8 +42,10 @@ class ObservationNode(object):
 
     def best_child(self):
         """Returns the best child in order of the sort key."""
+
         return max(self.children, key=ObservationNode.sort_key)
 
     def sort_key(self):
         """The key function for searching best child."""
+
         return (self.visit_count, self.total_reward)

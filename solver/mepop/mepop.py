@@ -1,24 +1,28 @@
-from statistic.record_history import History
-from statistic.step_record import StepRecord
+from policy.step_record import StepRecord
+from policy.history import History
 
 from solver.solver import Solver
-from solver.me_pomcp.obs_node import ObservationNode
-from solver.me_pomcp.action_node import ActionNode
+from solver.mepop.obs_node import ObservationNode
+from solver.mepop.action_node import ActionNode
 
 from util.console import console
 from util.divider import print_divider
 
 import numpy as np
 
-module = "ME-POMCP"
+module = "MEPOP"
 
 
-class ME_POMCP(Solver):
+class MEPOP(Solver):
     """
-    Solver: ME-POMCP
+    Solver: MEPOP
     """
+    online = True
 
-    def __init__(self, args):
+    def __init__(self, env, args):
+        # Environment to be solved
+        self._env = env
+
         # Name of the solver
         self.name = args['solver']
 
@@ -53,32 +57,38 @@ class ME_POMCP(Solver):
         self.rollout_policy = self._random_policy
 
     def reset_for_epoch(self):
-        """Initial the solver before solving the game."""
+        """Initialize the solver before solving the game."""
         pass
 
-    def solve_game(self, env):
-        """Solve the entire game for one epoch."""
+    def play_game(self):
+        """Play the entire game for one epoch."""
 
-        state = env.new_initial_state()
-        obs = state.initial_obs()
+        state = self._env.initial_state()
+        obs = self._env.initial_obs()
+        # Get the first non-chance node as the root
+        while state.is_chance():
+            legal_actions, prob_list = state.chance_outcomes()
+            action = np.random.choice(legal_actions, p=prob_list)
+            step_record = self._env.step(state, action)
+            state = step_record.next_state
+            obs = step_record.obs
 
-        # Set the root node and the corresponding particle bin
+        # Set root node and the corresponding particle bin
         root = ObservationNode(obs, depth=0)
         for _ in range(self.n_start_states):
-            particle = env.new_initial_state()
-            while particle.initial_obs() != obs:
-                particle = env.new_initial_state()
+            possible_states, prob_list = obs.possible_states()
+            particle = np.random.choice(possible_states, p=prob_list)
             root.particle_bin.append(particle)
 
         history = History()
 
         # Solve the game by step until a terminal state
         while not state.is_terminal():
+            assert not state.is_chance()
             # Get an action by planning
-            action = self._solve_one_step(root, env)
-
+            action = self._solve_one_step(root)
             # Get step result
-            step_record = env.step(state, action)
+            step_record = self._env.step(state, action)
 
             # Show the step
             if not self.quiet:
@@ -87,13 +97,19 @@ class ME_POMCP(Solver):
                 step_record.show()
 
             history.append(step_record)
-
             state = step_record.next_state
+
+            # Get the next non-chance node
+            while state.is_chance():
+                legal_actions, prob_list = state.chance_outcomes()
+                chance_action = np.random.choice(legal_actions, p=prob_list)
+                step_record = self._env.step(state, chance_action)
+
             root = root.find_child(action).find_child(step_record.obs)
 
         return history
 
-    def _solve_one_step(self, root, env):
+    def _solve_one_step(self, root):
         """Solve and return an action at some state."""
 
         # Do simulations for n times
@@ -103,10 +119,10 @@ class ME_POMCP(Solver):
 
             # Selection and Expansion
             visit_path, record_history, working_state = self._apply_tree_policy(
-                state, root, env)
+                state, root)
 
             # Evaluation
-            ev_return = self.evaluation_fn(working_state, env)
+            ev_return = self.evaluation_fn(working_state)
 
             # Back up
             for action_node, obs_node in reversed(visit_path):
@@ -131,7 +147,7 @@ class ME_POMCP(Solver):
 
         return root.best_child().action
 
-    def _apply_tree_policy(self, state, root, env):
+    def _apply_tree_policy(self, state, root):
         """Select nodes according to the tree policy in the search tree."""
 
         visit_path = []
@@ -154,10 +170,14 @@ class ME_POMCP(Solver):
             # Choose a child by e2w policy
             action_child = current_node.find_child_by_e2w(
                 self.me_tau, self.me_epsilon)
-
-            # Get step result and turn to the action child node
-            step_record = env.step(working_state, action_child.action)
             current_node = action_child
+
+            # Get the next non-chance step result
+            step_record = self._env.step(working_state, action_child.action)
+            while step_record.next_state.is_chance():
+                legal_actions, prob_list = state.chance_outcomes()
+                chance_action = np.random.choice(legal_actions, p=prob_list)
+                step_record = self._env.step(state, chance_action)
             depth += 1
 
             # Turn to the obs child node, if not exists, append a new node
@@ -175,18 +195,23 @@ class ME_POMCP(Solver):
 
         return visit_path, record_history, working_state
 
-    def _rollout(self, state, env):
+    def _rollout(self, state):
         """Rollout method to evaluate a state."""
 
         history = History()
 
         # Rollout to terminal state and return the discounted reward
         while not state.is_terminal():
-            action = self.rollout_policy(state)
-            step_record = env.step(state, action)
-            state = step_record.next_state
+            if state.is_chance():  # is chance
+                legal_actions, prob_list = state.chance_outcomes()
+                action = np.random.choice(legal_actions, p=prob_list)
+                state = self._env.step(state, action).next_state
+            else:  # is not chance
+                action = self.rollout_policy(state)
+                step_record = self._env.step(state, action)
+                state = step_record.next_state
 
-            history.append(step_record)
+                history.append(step_record)
 
         return history.discounted_return(self.discount)
 

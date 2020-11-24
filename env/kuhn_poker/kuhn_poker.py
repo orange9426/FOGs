@@ -1,17 +1,12 @@
-from statistic.step_record import StepRecord
-from statistic.record_history import History
-
-from env.env import Environment
-from env.kuhn_poker.kuhn_poker_world_state import WorldState
-from env.kuhn_poker.kuhn_poker_action import Action
-from env.kuhn_poker.kuhn_poker_obs import PrivateObservation
-from env.kuhn_poker.kuhn_poker_obs import PublicObservation
+import env.environment as e
+from env.kuhn_poker.kuhn_poker_char import *
+from policy.step_record import StepRecord
 
 import numpy as np
 import copy
 
 
-class KuhnPoker(Environment):
+class KuhnPoker(e.Environment):
     """Environment class: Kuhn Poker
 
     Define the Kuhn Poker environment as a FOG.
@@ -19,10 +14,9 @@ class KuhnPoker(Environment):
     """
 
     def __init__(self):
-        """Init Kuhn Poker class with naming."""
+        """Init Kuhn Poker class."""
 
-        self.name = 'Kuhn Poker'
-        self.multi_agent = True
+        self.name = 'KuhnPoker'
         self.num_players = 2
 
     def initial_state(self):
@@ -35,27 +29,6 @@ class KuhnPoker(Environment):
 
         return (PrivateObservation(-1, player=0), PrivateObservation(-1, player=0),
                 PublicObservation([1, 1]))
-
-    def initial_history(self):
-        """Get new initial history with the initial record."""
-
-        return History([StepRecord(next_state=self.initial_state(),
-                                   obs=self.initial_obs())], self)
-
-    def get_all_histories(self):
-        """Return a list of all possible histories in the game."""
-
-        history_list = []
-        history_queue = [self.initial_history()]
-
-        while history_queue:
-            history = history_queue.pop(0)
-            history_list.append(history)
-            if not history[-1].is_terminal:
-                history_queue += [history.child(action) for action in
-                                  history[-1].next_state.legal_actions()]
-
-        return history_list
 
     def step(self, world_state, action):
         """Get the step result given a world state and an action."""

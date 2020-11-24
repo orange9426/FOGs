@@ -1,6 +1,6 @@
 from util.console import console
 from util.divider import print_divider
-from statistic.statistic import Statistic
+from util.statistic import Statistic
 import numpy as np
 
 module = 'RESULTS'

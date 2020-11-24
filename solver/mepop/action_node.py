@@ -13,6 +13,7 @@ class ActionNode(object):
 
     def uct_value(self, parent_visit_count, uct_c):
         """Returns the UCT value of child."""
+
         if self.visit_count == 0:
             return float("inf")
 
@@ -21,6 +22,7 @@ class ActionNode(object):
 
     def find_child(self, obs):
         """Returns the child obs node according to the given obs."""
+
         candi = [c for c in self.children if c.obs == obs]
         if candi:
             return np.random.choice(candi)
