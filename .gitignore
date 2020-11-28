@@ -4,7 +4,9 @@ __pycache__/
 *$py.class
 
 # Results
-results/
+*.log
+*.png
+*.jpg
 
 # Jupyter Notebook
 .ipynb_checkpoints/
