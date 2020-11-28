@@ -12,7 +12,7 @@ module = 'RUN'
 def run(solver, args):
     """Run multiple epochs as an experiment."""
 
-    print('Envirinment: %s, Solver: %s' % (args['solver'], args['env']))
+    print('Envirinment: %s, Solver: %s' % (args['env'], args['solver']))
     print_divider('large')
 
     if solver.online:
@@ -45,8 +45,12 @@ def run(solver, args):
         # Write the results to the log
         _log_result(results, args)
 
+        return results
+
     else:  # train the policy offline
         policy = _train_policy(solver)
+
+        return policy
 
 
 def _play_game(solver):
