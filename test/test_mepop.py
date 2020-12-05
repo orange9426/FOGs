@@ -1,5 +1,5 @@
 import sys
-sys.path.append(sys.path[0] + '\..')
+sys.path.append(sys.path[0] + '/..')
 
 import env as env_module
 import solver as solver_module
@@ -7,8 +7,7 @@ from util import logger
 from run import run
 
 import numpy as np
-from matplotlib import pyplot as plt
-
+import pandas as pd
 
 def main():
     # Parse the arguments for each run
@@ -23,8 +22,8 @@ def main():
             'max_particle_count': 200,
             'max_depth': 100,
             'uct_coefficient': 100,
-            'me_tau': 0.4,
-            'me_epsilon': 0.5
+            'me_tau': 40,
+            'me_epsilon': 0
             }
 
     env = getattr(env_module, args['env'])()
@@ -75,15 +74,9 @@ def main():
         result = run(solver, args)
         mepop_history.append(result.undiscounted_return.mean)
     
-    X = list(range(50, 150, 50))
-    plt.figure()
-    plt.plot(X, pomcp_history, label='POMCP')
-    plt.plot(X, mepop_history, label='MEPOP')
-    plt.title('Algorithms in Tiger')
-    plt.xlabel('num of simulations')
-    plt.ylabel('total return')
-    plt.legend()
-    plt.savefig('results/graph/mepop.png')
+    df = pd.DataFrame({'pomcp': pomcp_history, 'mepop': mepop_history})
+    with open('results/csv/tiger_pomcp_and_mepop.csv', 'w'):
+        df.to_csv('results/csv/tiger_pomcp_and_mepop.csv')
 
 
 if __name__ == '__main__':

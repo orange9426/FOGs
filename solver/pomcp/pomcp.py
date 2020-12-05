@@ -50,7 +50,6 @@ class POMCP(Solver):
         self.uct_c = args['uct_coefficient']
 
         # Function pointer
-        self.child_selection_fn = ActionNode.uct_value
         self.evaluation_fn = self._rollout
         self.rollout_policy = self._random_policy
 
@@ -159,9 +158,7 @@ class POMCP(Solver):
                 ]
 
             # Choose a child by maximizing uct value
-            action_child = max(current_node.children,
-                               key=lambda c: self.child_selection_fn(
-                                   c, current_node.visit_count, self.uct_c))
+            action_child = current_node.find_child_by_uct(self.uct_c)
             current_node = action_child
 
             # Get the next non-chance step result

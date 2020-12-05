@@ -17,7 +17,7 @@ def parse_args():
                         help='Specify the solver to use {POMCP}')
     parser.add_argument('--discount', default=1, type=float,
                         help='Specify the discount factor (default=1)')
-    parser.add_argument('--n_epochs', default=10, type=int,
+    parser.add_argument('--n_epochs', default=1000, type=int,
                         help='Num of epochs of the experiment to conduct')
     parser.add_argument('--quiet', dest='quiet', action='store_true',
                         help='Flag of whether to print step messages')
@@ -33,16 +33,16 @@ def parse_args():
                         help='Upper bound on num of particles a belief node can have in MCTS')
     parser.add_argument('--max_depth', default=100, type=int,
                         help='Max depth for a DFS of the belief search tree in MCTS')
-    parser.add_argument('--uct_coefficient', default=80.0, type=float,
+    parser.add_argument('--uct_coefficient', default=100.0, type=float,
                         help='Coefficient for UCT algorithm used by MCTS')
 
     # Arguments for MEPOP
-    parser.add_argument('--me_tau', default=1, type=float,
+    parser.add_argument('--me_tau', default=50.0, type=float,
                         help='Tau for Maximum Entropy algorithm used by MCTS')
-    parser.add_argument('--me_epsilon', default=0.5, type=float,
+    parser.add_argument('--me_epsilon', default=0.0, type=float,
                         help='Epsilon for Maximum Entropy algorithm used by MCTS')
 
-    parser.set_defaults(quiet=False)
+    parser.set_defaults(quiet=True)
 
     # Cast to a dictionary
     args = vars(parser.parse_args())
