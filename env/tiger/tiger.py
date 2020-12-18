@@ -73,3 +73,8 @@ class Tiger(e.Environment):
             step_record.is_terminal = True
 
         return step_record
+    
+    def possible_states(self, obs):
+        """Return a list of all possilble states corresponding to initial obs."""
+
+        return [WorldState(0), WorldState(1)], [0.5, 0.5]

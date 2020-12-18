@@ -69,10 +69,9 @@ class History(list):
 
     def to_string(self):
         # Append the first world state string
-        string = self[0].next_state.to_string()
-        for record in self[1:]:
-            string += ' -> ' + record.action.to_string() + \
-                ' -> ' + record.next_state.to_string()
+        string = self[0].next_state.to_string() + ' -> '
+        string += ' -> '.join(record.action.to_string() + ' -> ' +
+                              record.next_state.to_string() for record in self[1:])
 
         return string
 
@@ -109,10 +108,8 @@ class InformationState(list):
         def str_fun(item):
             if isinstance(item, tuple):
                 return '; '.join(x.to_string() for x in item)
-            elif item == None:
-                return 'None'
             else:
-                return item.to_string()
+                return str(item)
 
         return ' -> '.join(map(str_fun, self))
 
@@ -127,7 +124,10 @@ class InformationState(list):
 
 
 class PublicState(list):
-    """Public state object defined in FOGs."""
+    """Public state object defined in FOGs.
+    
+    This is a sequence of public observations like [O_pub^0, O_pub^1, ...,
+    O_pub^t] in FOGs."""
 
     def __init__(self, a=[]):
         super().__init__(a)

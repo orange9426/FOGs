@@ -76,14 +76,14 @@ class MEPOP(Solver):
         # Set root node and the corresponding particle bin
         root = ObservationNode(obs, depth=0)
         for _ in range(self.n_start_states):
-            possible_states, prob_list = obs.possible_states()
+            possible_states, prob_list = self._env.possible_states(obs)
             particle = np.random.choice(possible_states, p=prob_list)
             root.particle_bin.append(particle)
 
         history = History()
 
         # Solve the game by step until a terminal state
-        while not state.is_terminal():
+        while not state.is_terminal() and root.depth < self.max_depth:
             assert not state.is_chance()
             # Get an action by planning
             action = self._solve_one_step(root)

@@ -82,7 +82,3 @@ class Observation(e.Observation):
         """Return a string representing this private observation."""
 
         return Observation.__name_dict[self.encode]
-
-    def possible_states(self):
-
-        return [WorldState(0), WorldState(1)], [0.5, 0.5]
