@@ -12,45 +12,58 @@ class History(list):
 
     def __init__(self, a=[], env=None):
         super().__init__(a)
-        self.env = env
+        self._env = env
+        self._children = {}
+
+    def current_player():
+        """Get the current player of the history."""
+
+        return self[-1].next_state.current_player()
 
     def child(self, action):
         """Get the child history given an action."""
-        step_record = self.env.step(self[-1].next_state, action)
-        history = History([record for record in self[:]], self.env)
-        history.append(step_record)
-        return history
+
+        # Store the children as the values of a dict and the action as the keys
+        if action.to_string() not in self._children.keys():
+            step_record = self._env.step(self[-1].next_state, action)
+            self._children[action.to_string()] = History(
+                [record for record in self[:]], self._env)
+            self._children[action.to_string()].append(step_record)
+
+        return self._children[action.to_string()]
 
     def get_info_state(self):
-        """Get the info states of two players corresponding to the history."""
+        """Get the info states of two players corresponding to this history."""
 
-        info_state = (InformationState(player=0), InformationState(player=1))
+        if not hasattr(self, '_info_state'):
+            self._info_state = (InformationState(player=0, env=self._env),
+                                InformationState(player=1, env=self._env))
 
-        for player in [0, 1]:
-            for record in self:
-                if record.action:  # not the first record in the history
-                    # Append the action if player is the current player
-                    if record.action.player == player:
-                        info_state[player].append(record.action)
-                    else:
-                        info_state[player].append(None)
-                info_state[player].append((record.obs[player], record.obs[-1]))
+            for player in [0, 1]:
+                for record in self:
+                    if record.action:  # not the first record in the history
+                        # Append the action if player is the current player
+                        if record.action.player == player:
+                            self._info_state[player].append(record.action)
+                        else:
+                            self._info_state[player].append(None)
+                    self._info_state[player].append(
+                        (record.obs[player], record.obs[-1]))
 
-        return info_state
+        return self._info_state
 
     def get_public_state(self):
-        """Get the public state corresponding to the history."""
+        """Get the public state corresponding to this history."""
 
-        public_state = PublicState()
+        if not hasattr(self, '_public_state'):
+            # List the public observation
+            self._public_state = PublicState(
+                [record.obs[-1] for record in self], env=self._env)
 
-        # List the public observation
-        for record in self:
-            public_state.append(record.obs[-1])
-
-        return public_state
+        return self._public_state
 
     def undiscounted_return(self):
-        """Get undiscounted return of the trajectory."""
+        """Get undiscounted return of this trajectory."""
 
         undiscounted_return = 0
         for step_record in self:
@@ -58,7 +71,7 @@ class History(list):
         return undiscounted_return
 
     def discounted_return(self, discount):
-        """Get discounted return of the trajectory."""
+        """Get discounted return of this trajectory."""
 
         discounted_return = 0
         factor = 1
@@ -69,9 +82,11 @@ class History(list):
 
     def to_string(self):
         # Append the first world state string
-        string = self[0].next_state.to_string() + ' -> '
-        string += ' -> '.join(record.action.to_string() + ' -> ' +
-                              record.next_state.to_string() for record in self[1:])
+        string = self[0].next_state.to_string()
+        if len(self) > 1:
+            string += ' -> '
+            string += ' -> '.join(record.action.to_string() + ' -> ' +
+                                  record.next_state.to_string() for record in self[1:])
 
         return string
 
@@ -84,6 +99,11 @@ class History(list):
     def __ne__(self, other):
         return not self == other
 
+    def __str__(self):
+        return self.to_string()
+
+    __repr__ = __str__
+
 
 class InformationState(list):
     """Represents the node where players make decisions.
@@ -92,17 +112,29 @@ class InformationState(list):
     [O_i^0, a_i^0, O_i^1, a_i^1, ..., O_i^t] in FOGs.
     """
 
-    def __init__(self, a=[], player=0):
+    def __init__(self, a=[], player=0, env=None):
         super().__init__(a)
         self.player = player
+        self._env = env
+
+    def get_all_histories(self):
+        """Given a list of all histories, get a list of all possible histories
+        corresponding to this information state."""
+
+        if not hasattr(self, '_histories'):
+            self._histories = [h for h in self._env.get_all_histories() if
+                               h.get_info_state()[self.player] == self]
+
+        return self._histories
 
     def get_public_state(self):
-        """Get the public state corresponding to the information state."""
-        public_state = PublicState()
-        for i, item in enumerate(self):
-            if i % 2 == 0:  # for observations
-                public_state.append(item[-1])
-        return public_state
+        """Get the public state corresponding to this information state."""
+
+        if not hasattr(self, '_public_state'):
+            self._public_state = PublicState(
+                [item[-1] for item in self[::2]], env=self._env)
+
+        return self._public_state
 
     def to_string(self):
         def str_fun(item):
@@ -122,17 +154,47 @@ class InformationState(list):
     def __ne__(self, other):
         return not self == other
 
+    def __str__(self):
+        return self.to_string()
+
+    __repr__ = __str__
+
 
 class PublicState(list):
     """Public state object defined in FOGs.
-    
+
     This is a sequence of public observations like [O_pub^0, O_pub^1, ...,
     O_pub^t] in FOGs."""
 
-    def __init__(self, a=[]):
+    def __init__(self, a=[], env=None):
         super().__init__(a)
+        self._env = env
 
-    def to_string():
+    def current_player(self):
+        """Get the current player of the public state."""
+
+        return self.get_all_histories[0].current_player()
+
+    def get_all_histories(self):
+        """Given a list of all histories, get a list of all possible histories
+        corresponding to this public state."""
+
+        if not hasattr(self, '_histories'):
+            self._histories = [h for h in self._env.get_all_histories() if
+                               h.get_public_state() == self]
+
+        return self._histories
+
+    # def get_all_infostates(self, infostate_list):
+    #     """Given a list of all infostates, get a list of all possible infostates
+    #     corresponding to this public state."""
+
+    #     if not hasattr(self, '_infostates'):
+    #         self._infostates = [
+    #             s for s in infostate_list if s.get_public_state == self]
+    #     return self._infostates
+
+    def to_string(self):
         return ' -> '.join(o.to_string() for o in self)
 
     def __eq__(self, other):
@@ -143,3 +205,8 @@ class PublicState(list):
 
     def __ne__(self, other):
         return not self == other
+
+    def __str__(self):
+        return self.to_string()
+
+    __repr__ = __str__

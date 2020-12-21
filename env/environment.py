@@ -1,5 +1,6 @@
 from policy.step_record import StepRecord
 from policy.history import History
+from policy.public_belief_state import PublicBeliefState
 import abc
 
 
@@ -24,24 +25,42 @@ class Environment(abc.ABC):
     def initial_history(self):
         """Get new initial history with the initial record."""
 
-        # Append the init state and the init obs to the init history
-        return History([StepRecord(next_state=self.initial_state(),
-                                   obs=self.initial_obs())], self)
+        if not hasattr(self, '_initial_history'):
+            # Append the init state and the init obs to the init history
+            self._initial_history = History(
+                [StepRecord(next_state=self.initial_state(),
+                            obs=self.initial_obs())], self)
 
-    def get_all_histories(self):
+        return self._initial_history
+
+    def initial_pbs(self):
+        """Get new initial public belief state."""
+
+        if not hasattr(self, '_initial_pbs'):
+            public_state = self.initial_history().get_public_state()
+            prob_dict = {self.initial_history(): 1.0}
+            self._initial_pbs = PublicBeliefState(public_state, prob_dict)
+
+        return self._initial_pbs
+
+    def get_all_histories(self, max_depth=20):
         """Return a list of all possible histories in the game."""
 
-        # Breadth-first to traverse the game tree
-        history_list = []
-        history_queue = [self.initial_history()]
-        while history_queue:
-            history = history_queue.pop(0)
-            history_list.append(history)
-            if not history[-1].is_terminal:
-                history_queue += [history.child(action) for action in
+        if not hasattr(self, '_history_list'):
+            # Breadth-first to traverse the game tree
+            self._history_list = []
+            bfs_queue = [self.initial_history()]
+            while bfs_queue:
+                history = bfs_queue.pop(0)
+                # Break if reach the max depth
+                if len(history) > max_depth:
+                    break
+                self._history_list.append(history)
+                if not history[-1].is_terminal:
+                    bfs_queue += [history.child(action) for action in
                                   history[-1].next_state.legal_actions()]
 
-        return history_list
+        return self._history_list
 
     def __str__(self):
         return self.name

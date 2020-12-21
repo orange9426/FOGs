@@ -84,11 +84,11 @@ class RockSample(e.Environment):
             distance = np.abs(rock_info[0][0] - pos[0]) + \
                 np.abs(rock_info[0][1] - pos[1])
             if np.random.rand() < np.math.pow(2, -distance / 10):
-                step_record.obs = Observation(1) \
-                    if rock_info[1] is 'good' else Observation(0)
+                step_record.obs = Observation(1) if \
+                    rock_info[1] is 'good' else Observation(0)
             else:
-                step_record.obs = Observation(1) \
-                    if rock_info[1] is 'bad' else Observation(0)
+                step_record.obs = Observation(1) if \
+                    rock_info[1] is 'bad' else Observation(0)
         else:
             step_record.obs = Observation(-1)  # none
 
