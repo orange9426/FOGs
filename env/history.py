@@ -1,4 +1,4 @@
-from policy.step_record import StepRecord
+from util.step_record import StepRecord
 import numpy as np
 
 
@@ -15,10 +15,40 @@ class History(list):
         self._env = env
         self._children = {}
 
-    def current_player():
+    def is_chance(self):
+        """Whether is the chance node."""
+
+        return self[-1].next_state.is_chance()
+
+    def is_terminal(self):
+        """Whether is the terminal node."""
+
+        return self[-1].next_state.is_terminal()
+
+    def current_player(self):
         """Get the current player of the history."""
 
         return self[-1].next_state.current_player()
+
+    def legal_actions(self):
+        """Return a list of actions are legal on this history."""
+
+        return self[-1].next_state.legal_actions()
+
+    def chance_outcomes(self):
+        """Return a list of actions and the corresponding probs."""
+
+        return self[-1].next_state.chance_outcomes()
+
+    def get_return(self, discount=1):
+        """Get discounted return of this trajectory."""
+
+        get_return = 0
+        factor = 1
+        for step_record in self:
+            get_return += factor * step_record.reward
+            factor *= discount
+        return get_return
 
     def child(self, action):
         """Get the child history given an action."""
@@ -61,24 +91,6 @@ class History(list):
                 [record.obs[-1] for record in self], env=self._env)
 
         return self._public_state
-
-    def undiscounted_return(self):
-        """Get undiscounted return of this trajectory."""
-
-        undiscounted_return = 0
-        for step_record in self:
-            undiscounted_return += step_record.reward
-        return undiscounted_return
-
-    def discounted_return(self, discount):
-        """Get discounted return of this trajectory."""
-
-        discounted_return = 0
-        factor = 1
-        for step_record in self:
-            discounted_return += factor * step_record.reward
-            factor *= discount
-        return discounted_return
 
     def to_string(self):
         # Append the first world state string
@@ -169,11 +181,6 @@ class PublicState(list):
     def __init__(self, a=[], env=None):
         super().__init__(a)
         self._env = env
-
-    def current_player(self):
-        """Get the current player of the public state."""
-
-        return self.get_all_histories[0].current_player()
 
     def get_all_histories(self):
         """Given a list of all histories, get a list of all possible histories

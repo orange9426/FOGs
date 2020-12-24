@@ -1,6 +1,6 @@
-from policy.step_record import StepRecord
-from policy.history import History
-from policy.public_belief_state import PublicBeliefState
+from util.step_record import StepRecord
+from env.history import History
+from env.public_belief_state import PublicBeliefState
 import abc
 
 

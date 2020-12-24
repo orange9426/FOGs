@@ -1,7 +1,4 @@
-from policy.step_record import StepRecord
-from policy.history import History
 from policy.policy import TabularPolicy
-import env as env_module
 
 from solver.solver import Solver
 
@@ -75,20 +72,20 @@ class CFR(Solver):
         self._initialize_info_states_nodes(self._root_node)
 
     def _initialize_info_states_nodes(self, history):
-        if history[-1].next_state.is_terminal():
+        if history.is_terminal():
             return
 
-        if history[-1].next_state.is_chance():
-            for action in history[-1].next_state.legal_actions():
+        if history.is_chance():
+            for action in history.legal_actions():
                 self._initialize_info_states_nodes(history.child(action))
             return
 
-        current_player = history[-1].next_state.current_player()
+        current_player = history.current_player()
         info_state = history.get_info_state()[current_player].to_string()
 
         info_state_node = self._info_state_nodes.get(info_state)
         if info_state_node is None:
-            legal_actions = history[-1].next_state.legal_actions()
+            legal_actions = history.legal_actions()
             info_state_node = InfoStateNode(
                 legal_actions=legal_actions,
                 index_in_tabular_policy=self._current_policy.history_lookup[info_state]
@@ -106,12 +103,12 @@ class CFR(Solver):
         return self._average_policy
 
     def _compute_counterfactual_regret_for_player(self, history, reach_probabilities, player):
-        if history[-1].next_state.is_terminal():
-            return np.asarray([history[-1].reward, -history[-1].reward])
+        if history.is_terminal():
+            return np.asarray([history.get_return(), -history.get_return()])
 
-        if history[-1].next_state.is_chance():
+        if history.is_chance():
             history_value = 0.0
-            for action, action_prob in zip(*history[-1].next_state.chance_outcomes()):
+            for action, action_prob in zip(*history.chance_outcomes()):
                 new_history = history.child(action)
                 new_reach_probabilities = reach_probabilities.copy()
                 new_reach_probabilities[-1] *= action_prob
@@ -119,7 +116,7 @@ class CFR(Solver):
                     new_history, new_reach_probabilities, player)
             return history_value
 
-        current_player = history[-1].next_state.current_player()
+        current_player = history.current_player()
         info_state = history.get_info_state()[current_player].to_string()
 
         if all(reach_probabilities[:-1] == 0):
@@ -132,7 +129,7 @@ class CFR(Solver):
             info_state_node.index_in_tabular_policy
         ]
 
-        legal_actions = history[-1].next_state.legal_actions()
+        legal_actions = history.legal_actions()
 
         for i in range(len(legal_actions)):
             action_prob = info_state_policy[i]

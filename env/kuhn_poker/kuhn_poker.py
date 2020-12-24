@@ -1,6 +1,6 @@
 import env.environment as e
 from env.kuhn_poker.kuhn_poker_char import *
-from policy.step_record import StepRecord
+from util.step_record import StepRecord
 
 import numpy as np
 import copy

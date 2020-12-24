@@ -34,8 +34,8 @@ def run(solver, args):
             # Record the results
             results.time.add(time.time() - epoch_start)
             results.update_reward_results(
-                game_history.undiscounted_return(),
-                game_history.discounted_return(args['discount']))
+                game_history.get_return(),
+                game_history.get_return(args['discount']))
 
         if not args['quiet']:
             print_divider('medium')

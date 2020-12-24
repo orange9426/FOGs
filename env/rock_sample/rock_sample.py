@@ -1,6 +1,6 @@
 import env.environment as e
 from env.rock_sample.rock_sample_char import *
-from policy.step_record import StepRecord
+from util.step_record import StepRecord
 
 import numpy as np
 import copy

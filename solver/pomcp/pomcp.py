@@ -1,5 +1,4 @@
-from policy.step_record import StepRecord
-from policy.history import History
+from env.history import History
 
 from solver.solver import Solver
 from solver.pomcp.obs_node import ObservationNode
@@ -202,7 +201,7 @@ class POMCP(Solver):
 
                 history.append(step_record)
 
-        return history.discounted_return(self.discount)
+        return history.get_return(self.discount)
 
     def _random_policy(self, state):
         """Random policy."""
