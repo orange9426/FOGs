@@ -13,13 +13,15 @@ class StepRecord(object):
     """
 
     def __init__(self, state=None, action=None, next_state=None,
-                 obs=None, reward=0, is_terminal=False):
+                 obs=None, reward=0):
         self.state = state
         self.action = action
         self.next_state = next_state
         self.obs = obs
         self.reward = reward
-        self.is_terminal = is_terminal
+
+    def is_terminal(self):
+        return self.next_state.is_terminal()
 
     def show(self):
         console(3, module, 'State: ' + self.state.to_string())

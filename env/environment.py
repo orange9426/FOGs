@@ -56,7 +56,7 @@ class Environment(abc.ABC):
                 if len(history) > max_depth:
                     break
                 self._history_list.append(history)
-                if not history[-1].is_terminal:
+                if not history[-1].is_terminal():
                     bfs_queue += [history.child(action) for action in
                                   history[-1].next_state.legal_actions()]
 

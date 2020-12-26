@@ -11,7 +11,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Set the run parameters.')
 
     # Argments for model
-    parser.add_argument('--env', default='KuhnPoker', type=str,
+    parser.add_argument('--env', default='LeducPoker', type=str,
                         help='Specify the env to solve {Tiger}')
     parser.add_argument('--solver', default='CFR', type=str,
                         help='Specify the solver to use {POMCP}')

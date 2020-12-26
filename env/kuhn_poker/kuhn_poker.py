@@ -4,6 +4,7 @@ from util.step_record import StepRecord
 
 import numpy as np
 import copy
+import torch
 
 
 class KuhnPoker(e.Environment):
@@ -27,7 +28,7 @@ class KuhnPoker(e.Environment):
     def initial_obs(self):
         """Get new initial observations."""
 
-        return (PrivateObservation(-1, player=0), PrivateObservation(-1, player=0),
+        return (PrivateObservation(-1, player=0), PrivateObservation(-1, player=1),
                 PublicObservation([1, 1]))
 
     def step(self, world_state, action):
@@ -44,14 +45,13 @@ class KuhnPoker(e.Environment):
         if world_state.is_chance():  # is chance
             w_encode[0] = copy.deepcopy(action.encode)
             w_encode[-1] = 0  # player 1's turn
-        else:  # pass
+        else:
             if action.encode == 0:  # pass
                 # The game will not end after 'pass' only if at the beginning
                 if w_encode[1] == [1, 1] and w_encode[-1] == 0:
                     w_encode[-1] = 1 - w_encode[-1]  # opponent's turn
                 else:  # the game is over
                     w_encode[-1] = -2  # terminal
-                    step_record.is_terminal = True
                     if w_encode[1] == [1, 1]:  # all pass
                         reward = 1 if w_encode[0][0] > w_encode[0][1] else -1
                     else:
@@ -62,7 +62,6 @@ class KuhnPoker(e.Environment):
                 # The game will end after 'bet' only if all bet
                 if w_encode[1] == [2, 2]:
                     w_encode[-1] = -2  # terminal
-                    step_record.is_terminal = True
                     reward = 2 if w_encode[0][0] > w_encode[0][1] else -2
                 else:
                     w_encode[-1] = 1 - w_encode[-1]  # opponent's turn
@@ -76,3 +75,15 @@ class KuhnPoker(e.Environment):
                            PublicObservation(w_encode[1]))
 
         return step_record
+
+    def get_tensor(self, pbs):
+        """Get the tensor of a public belief state."""
+
+        public_state = pbs.history_list.public_state
+        # Get tensor such like [round, bet1, bet2, *prob_dict]
+        pbs_list = [len(public_state), public_state[-1].encode[0],
+                    public_state[-1].encode[1],
+                    *[prob for prob in pbs.prob_dict.values()]]
+        pbs_tensor= torch.tensor(prob_list)
+
+        return pbs_tensor
