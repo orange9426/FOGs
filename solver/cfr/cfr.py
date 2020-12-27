@@ -221,7 +221,7 @@ class DepthLimited_CFR(Solver):
 
     def _initialize_info_states_nodes(self, node):
         if isinstance(node, PublicBeliefState):
-            for history in node.history_list():
+            for history in node.history_list:
                 self._initialize_info_states_nodes(history)
         else:
             history = node
@@ -260,11 +260,11 @@ class DepthLimited_CFR(Solver):
         return self._average_policy
 
     def set_leaf_values(self, pbs):
-        history = pbs.history_list()[0]
+        history = pbs.history_list[0]
         if self._current_policy.leaf_dict[history.to_string()]:
             self.values_dict[pbs.public_state.to_string()] = self.value_net(self._game.get_tensor(pbs)).tolist() #!
         else:
-            if len(pbs.legal_actions):
+            if len(pbs.legal_actions()):
                 for action in pbs.legal_actions():    
                     self.set_leaf_values(pbs.child(action, self._current_policy))
 
@@ -287,8 +287,10 @@ class DepthLimited_CFR(Solver):
     def sample_pbs(self):
         initial_prob = []
         initial_history = []
-        for history, prob in self.initial_pbs.prob_dict.items()
+        for history in self.initial_pbs.history_list:
+            prob = self.initial_pbs.prob_dict[history.to_string()]
             initial_prob.append(prob)
+            initial_history.append(history)
         index = np.random.choice(np.arange(len(initial_prob)),p=initial_prob)
         history = initial_history[index]
         random_player = np.random.randint(self._num_players)

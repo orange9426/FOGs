@@ -23,6 +23,10 @@ class PublicBeliefState(object):
         """Get the current player of the history."""
 
         return self.history_list[0].current_player()
+    
+    def legal_actions(self):
+
+        return self.history_list[0].legal_actions()
 
     def child(self, action, policy):
         """Get the child PBS given the action and policy."""

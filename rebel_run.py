@@ -5,7 +5,7 @@ import torch.nn as nn
 
 from solver.cfr.cfr import DepthLimited_CFR
 
-env = 'kuhn_poker'
+env = 'KuhnPoker'
 buffer_capacity = 1000
 batch_size = 64
 lr = 0.01
@@ -41,11 +41,12 @@ class ReplayBuffer(object):
 
 class MLP(nn.Module):
     def __init__(self, dinp, layer_size, dout):
+        super(MLP, self).__init__()
         self.layers_sizes = [dinp] + layer_size + [dout]
         self.fcs = []
         for i in range(len(self.layers_sizes)-1):
             self.fcs.append(nn.Linear(self.layers_sizes[i], self.layers_sizes[i+1]))
-
+        self.fcs = nn.ModuleList(self.fcs)
     def forward(self, x):
         for i in range(len(self.layers_sizes)-1):
             x = self.fcs[i](x)
@@ -66,14 +67,15 @@ class ReBeL(object):
                  learning_every = 32):
         self.replay_buffer = ReplayBuffer(buffer_capacity)
         self.game = getattr(env_module, env)()
-        self.current_pbs = game.initial_pbs() #TODO: initial_pbs()
+        self.current_pbs = self.game.initial_pbs() #TODO: initial_pbs()
         self.max_depth = max_depth
         self.count = 0
         self.learning_every = learning_every
         self.min_buffer_size = min_buffer_size
         self.lr = lr
+        self.iteration_num = iteration_num
 
-        dinp = self.current_pbs.size()
+        dinp = self.game.get_tensor(self.current_pbs).size()[0]
         dout = len(self.current_pbs.prob_dict)
         self.value_net = MLP(dinp, layers_sizes, dout)
         self.batch_size = batch_size

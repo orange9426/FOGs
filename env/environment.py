@@ -38,7 +38,7 @@ class Environment(abc.ABC):
 
         if not hasattr(self, '_initial_pbs'):
             public_state = self.initial_history().get_public_state()
-            prob_dict = {self.initial_history(): 1.0}
+            prob_dict = {self.initial_history().to_string(): 1.0}
             self._initial_pbs = PublicBeliefState(public_state, prob_dict)
 
         return self._initial_pbs

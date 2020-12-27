@@ -77,7 +77,7 @@ class TabularPolicy_Subgame(Policy):
         bfs_queue = []
         histories = []
                 
-        for history in pbs.history_list():
+        for history in pbs.history_list:
             bfs_queue.append((history, 0))
             histories.append((history, 0))
         
@@ -86,8 +86,9 @@ class TabularPolicy_Subgame(Policy):
             history, depth = bfs_queue.pop(0)
             if not history.is_terminal():
                 for action in history.legal_actions():
-                    bfs.append((history.child(action), depth+1))
+                    bfs_queue.append((history.child(action), depth+1))
                     histories.append((history.child(action), depth+1))
+            depth = bfs_queue[0][1]
 
         self.histories = histories
         self.history_lookup = {}
@@ -128,7 +129,10 @@ class TabularPolicy_Subgame(Policy):
             self.action_probabilities_table.append([1/len(legal_actions)]*len(legal_actions))
 
     def get_prob(self, history, action):
-        return self.policy_for_key(self._history_key(history,history.current_player()))[history.legal_actions.index(action)]        
+        if not history.is_chance():
+            return self.policy_for_key(self._history_key(history,history.current_player()))[history.legal_actions().index(action)]        
+        else:
+            return history.chance_outcomes()[1][history.legal_actions().index(action)]
 
     def _history_key(self, history, player):
         return history.get_info_state()[player].to_string()

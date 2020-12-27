@@ -79,11 +79,11 @@ class KuhnPoker(e.Environment):
     def get_tensor(self, pbs):
         """Get the tensor of a public belief state."""
 
-        public_state = pbs.history_list.public_state
+        public_state = pbs.public_state
         # Get tensor such like [round, bet1, bet2, *prob_dict]
         pbs_list = [len(public_state), public_state[-1].encode[0],
                     public_state[-1].encode[1],
                     *[prob for prob in pbs.prob_dict.values()]]
-        pbs_tensor= torch.tensor(prob_list)
+        pbs_tensor= torch.tensor(pbs_list)
 
         return pbs_tensor
