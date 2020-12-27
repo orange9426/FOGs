@@ -36,7 +36,7 @@ class WorldState(e.WorldState):
             self.player = 0
 
     def legal_actions(self):
-        """Return a list of actions are legal on this state."""
+        """Return a list of actions that are legal on this state."""
 
         if self.player == -2:  # is terminal
             return []

@@ -1,7 +1,9 @@
 import env.tiger.tiger
-import env.kuhn_poker.kuhn_poker
 import env.rock_sample.rock_sample
+import env.kuhn_poker.kuhn_poker
+import env.leduc_poker.leduc_poker
 
 Tiger = env.tiger.tiger.Tiger
-KuhnPoker = env.kuhn_poker.kuhn_poker.KuhnPoker
 RockSample = env.rock_sample.rock_sample.RockSample
+KuhnPoker = env.kuhn_poker.kuhn_poker.KuhnPoker
+LeducPoker = env.leduc_poker.leduc_poker.LeducPoker

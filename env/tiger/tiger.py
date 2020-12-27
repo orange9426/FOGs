@@ -69,8 +69,6 @@ class Tiger(e.Environment):
             step_record.next_state = WorldState(world_state.encode)
         else:
             step_record.next_state = WorldState(-2)  # terminal
-            # The game is over
-            step_record.is_terminal = True
 
         return step_record
     

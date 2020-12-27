@@ -101,8 +101,6 @@ class RockSample(e.Environment):
         else:
             step_record.reward = 0
 
-        step_record.is_terminal = step_record.next_state.is_terminal()
-
         return step_record
 
     def possible_states(self, obs):

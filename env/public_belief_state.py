@@ -51,6 +51,3 @@ class PublicBeliefState(object):
             self._history_list = self.public_state.get_all_histories()
 
         return self._history_list
-
-    def to_tensor(self):
-        pass
