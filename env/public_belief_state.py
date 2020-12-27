@@ -36,7 +36,7 @@ class PublicBeliefState(object):
         for history in self.history_list:
             child_history = history.child(action)
             prob_dict[child_history.to_string()] = self.prob_dict[history.to_string()] \
-                * policy.get_prob_dict(history)[action.to_string()]  # TODO: policy.get_prob_dict()
+                * policy.get_prob(history, action)  # TODO: policy.get_prob_dict()
             total += prob_dict[child_history.to_string()]
         prob_dict = {k: v / total for k, v in prob_dict.items()}  # normalization
 
