@@ -1,6 +1,7 @@
 import env.environment as e
 from env.kuhn_poker.kuhn_poker_char import *
 from util.step_record import StepRecord
+from env.public_belief_state import PublicBeliefState
 
 import numpy as np
 import copy
@@ -30,6 +31,19 @@ class KuhnPoker(e.Environment):
 
         return (PrivateObservation(-1, player=0), PrivateObservation(-1, player=1),
                 PublicObservation([1, 1]))
+
+    def initial_pbs(self):
+        """Get new initial public belief state."""
+
+        if not hasattr(self, '_initial_pbs'):
+            initial_history = self.initial_history()
+            public_state = initial_history.child(
+                initial_history.legal_actions()[0]).get_public_state()
+            prob_dict = {initial_history.child(a).to_string(): p for
+                         a, p in zip(*initial_history.chance_outcomes())}
+            self._initial_pbs = PublicBeliefState(public_state, prob_dict)
+
+        return self._initial_pbs
 
     def step(self, world_state, action):
         """Get the step result given a world state and an action."""
@@ -77,13 +91,14 @@ class KuhnPoker(e.Environment):
         return step_record
 
     def get_tensor(self, pbs):
-        """Get the tensor of a public belief state."""
+        """Get the tensor of a public belief state such like
+        [round, bet1, bet2, *prob_dict]."""
 
         public_state = pbs.public_state
         # Get tensor such like [round, bet1, bet2, *prob_dict]
         pbs_list = [len(public_state), public_state[-1].encode[0],
                     public_state[-1].encode[1],
                     *[prob for prob in pbs.prob_dict.values()]]
-        pbs_tensor= torch.tensor(pbs_list)
+        pbs_tensor = torch.tensor(pbs_list)
 
         return pbs_tensor

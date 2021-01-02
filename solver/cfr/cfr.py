@@ -193,7 +193,7 @@ class CFR(Solver):
         for i in range(self.iterations):
             self.evaluate_and_update_policy()
         print(self.average_policy().action_probabilities_table)
-        return self.average_policy()
+        return self._average_policy
 
 
 class DepthLimited_CFR(Solver):
@@ -210,7 +210,8 @@ class DepthLimited_CFR(Solver):
         self.max_depth = max_depth
         self.initial_pbs = pbs
         self._root_pbs = self.initial_pbs  # !!!
-        self._current_policy = TabularPolicy_Subgame(self._game, pbs, max_depth)
+        self._current_policy = TabularPolicy_Subgame(
+            self._game, pbs, max_depth)
         self._average_policy = self._current_policy.__copy__()
         self.value_net = net
         self.values_dict = {}
@@ -228,7 +229,7 @@ class DepthLimited_CFR(Solver):
 
             if history.is_terminal():
                 return
-            
+
             if self._current_policy.leaf_dict[history.to_string()]:
                 return
 
@@ -261,18 +262,18 @@ class DepthLimited_CFR(Solver):
 
     def set_leaf_values(self, pbs):
         history = pbs.history_list[0]
-        if self._current_policy.leaf_dict[history.to_string()]:
-            self.values_dict[pbs.public_state.to_string()] = self.value_net(self._game.get_tensor(pbs)).tolist() #!
+        if self._current_policy.leaf_dict[history.to_string()]:  # is leaf
+            self.values_dict[pbs.public_state.to_string()] = self.value_net(
+                pbs.to_tensor()).tolist()  # !
         else:
-            if len(pbs.legal_actions()):
-                for action in pbs.legal_actions():    
-                    self.set_leaf_values(pbs.child(action, self._current_policy))
+            for action in pbs.legal_actions():
+                self.set_leaf_values(pbs.child(action, self._current_policy))
 
     def get_training_data(self):
-        self._current_policy = self.average_policy().copy()
+        self._current_policy = self.average_policy().__copy__()  # TODO:?
         label = []
         player = 0
-        for history in self.initial_pbs.history_list():
+        for history in self.initial_pbs.history_list:
             reach = np.ones(self._num_players+1)
             reach[-1] = self.initial_pbs.prob_dict[history.to_string()]
             value = self._compute_counterfactual_regret_for_player(
@@ -281,8 +282,8 @@ class DepthLimited_CFR(Solver):
                 player=player
             )[0]
             label.append(value)
-        label = torch.tensor(label,dtype=torch.float32)
-        return (self._game.get_tensor(self.initial_pbs), label)
+        label = torch.tensor(label, dtype=torch.float32)
+        return (self.initial_pbs.to_tensor(), label)
 
     def sample_pbs(self):
         initial_prob = []
@@ -291,22 +292,24 @@ class DepthLimited_CFR(Solver):
             prob = self.initial_pbs.prob_dict[history.to_string()]
             initial_prob.append(prob)
             initial_history.append(history)
-        index = np.random.choice(np.arange(len(initial_prob)),p=initial_prob)
+        index = np.random.choice(np.arange(len(initial_prob)), p=initial_prob)
         history = initial_history[index]
         random_player = np.random.randint(self._num_players)
         action_list = []
-        while (not history.is_terminal()) and (not self._current_policy.leaf_dict[history.to_string()]):
+        while not history.is_terminal() and not self._current_policy.leaf_dict[history.to_string()]:
             if history.current_player == random_player:
                 i = np.random.randint(len(history.legal_actions()))
                 action = history.legal_actions()[i]
                 history = history.child(action)
             elif history.is_chance():
-                action = np.random.choice(history.chance_outcomes()[0], p=history.chance_outcomes()[1])
+                action = np.random.choice(history.chance_outcomes()[
+                                          0], p=history.chance_outcomes()[1])
                 history = history.child(action)
             else:
-                info_state = history.get_info_state()[history.current_player()].to_string()
+                info_state = history.get_info_state(
+                )[history.current_player()].to_string()
                 policy = self._average_policy.policy_for_key(info_state)
-                i = np.random.choice(np.arange(len(policy)),p=policy)
+                i = np.random.choice(np.arange(len(policy)), p=policy)
                 action = history.legal_actions()[i]
                 history = history.child(action)
             action_list.append(action)
@@ -315,17 +318,14 @@ class DepthLimited_CFR(Solver):
             pbs = pbs.child(action, self._average_policy)
         return pbs
 
-        
-
     def _compute_counterfactual_regret_for_player(self, history, reach_probabilities, player):
         if history.is_terminal():
             return np.asarray([history.get_return(), -history.get_return()])
-        
+
         if self._current_policy.leaf_dict[history.to_string()]:
-            u = self.values_dict[history.get_public_state().to_string()][history.get_public_state().index(history)]
+            pub_s = history.get_public_state()
+            u = self.values_dict[pub_s.to_string()][pub_s.get_all_histories().index(history)]
             return np.asarray([u, -u])
-
-
 
         if history.is_chance():
             history_value = 0.0
@@ -384,7 +384,7 @@ class DepthLimited_CFR(Solver):
 
     def evaluate_and_update_policy(self):
         for player in range(self._num_players):
-            for history in self.initial_pbs.history_list():
+            for history in self.initial_pbs.history_list:
                 reach = np.ones(self._num_players+1)
                 reach[-1] = self.initial_pbs.prob_dict[history.to_string()]
                 self._compute_counterfactual_regret_for_player(
@@ -418,10 +418,8 @@ class DepthLimited_CFR(Solver):
 
     def train_policy(self):
         """Solve the entire game for one epoch."""
-        #self.iterations = 10
-        # print(self.current_policy().action_probabilities_table)
         for i in range(self.iteration_num):
             self.set_leaf_values(self.initial_pbs)
             self.evaluate_and_update_policy()
-        # print(self.average_policy().action_probabilities_table)
-        # return self.average_policy()
+
+        return self.average_policy()

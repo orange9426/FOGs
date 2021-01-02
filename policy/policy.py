@@ -9,21 +9,21 @@ class Policy(object):
     def __call__(self, history, player_id=None):
         return self.action_probabilities(history, player_id)
 
+
 class TabularPolicy(Policy):
     def __init__(self, game):
         all_players = list(range(game.num_players))
         super(TabularPolicy, self).__init__(game, all_players)
-        histories = game.get_all_histories() #!!!
+        histories = game.get_all_histories()
 
         self.history_lookup = {}
         self.info_state_per_player = [[] for _ in all_players]
         self.legal_actions_list = []
-        
 
         for player in all_players:
             for history in histories:
-                if player == history[-1].next_state.current_player():
-                    legal_actions = history[-1].next_state.legal_actions()
+                if player == history.current_player():
+                    legal_actions = history.legal_actions()
                     if len(legal_actions):
                         key = self._history_key(history, player)
                         if key not in self.history_lookup:
@@ -34,8 +34,9 @@ class TabularPolicy(Policy):
 
         self.action_probabilities_table = []
         for legal_actions in self.legal_actions_list:
-            self.action_probabilities_table.append([1/len(legal_actions)]*len(legal_actions))
-    
+            self.action_probabilities_table.append(
+                [1/len(legal_actions)]*len(legal_actions))
+
     def _history_key(self, history, player):
         return history.get_info_state()[player].to_string()
 
@@ -44,14 +45,21 @@ class TabularPolicy(Policy):
         return self.action_probabilities_table[policy_index]
 
     def action_probabilities(self, history, player_id):
-        policy_index = self.history_lookup[self._history_key(history,history[-1].next_state.current_player())]
+        policy_index = self.history_lookup[self._history_key(
+            history, history.current_player())]
         policy = self.action_probabilities_table[policy_index]
-        legal_actions = legal_actions_list[policy_index]
-        
+        legal_actions = self.legal_actions_list[policy_index]
+
         return {
             legal_actions[i]: policy[i]
             for i in range(len(legal_actions))
         }
+
+    def set_subgame_policy(self, policy_sub):
+        for key in policy_sub.history_lookup.keys():
+            history_index = self.history_lookup[key]
+            history_index_sub = policy_sub.history_lookup[key]
+            self.action_probabilities_table[history_index] = policy_sub.action_probabilities_table[history_index_sub]
 
     def __copy__(self):
         result = TabularPolicy.__new__(TabularPolicy)
@@ -63,24 +71,25 @@ class TabularPolicy(Policy):
         result.player_ids = self.player_ids
         return result
 
+
 class TabularPolicy_Subgame(Policy):
     def __init__(self, game, pbs, max_depth):
         all_players = list(range(game.num_players))
         super(TabularPolicy_Subgame, self).__init__(game, all_players)
-        
+
         assert(not pbs.is_terminal())
 
         self.game = game
         self.initial_pbs = pbs
         self.max_depth = max_depth
-        
+
         bfs_queue = []
         histories = []
-                
+
         for history in pbs.history_list:
             bfs_queue.append((history, 0))
             histories.append((history, 0))
-        
+
         depth = 0
         while bfs_queue and depth < max_depth:
             history, depth = bfs_queue.pop(0)
@@ -88,23 +97,23 @@ class TabularPolicy_Subgame(Policy):
                 for action in history.legal_actions():
                     bfs_queue.append((history.child(action), depth+1))
                     histories.append((history.child(action), depth+1))
-            depth = bfs_queue[0][1]
+                depth = bfs_queue[0][1]
 
         self.histories = histories
         self.history_lookup = {}
         self.info_state_per_player = [[] for _ in all_players]
         self.legal_actions_list = []
         self.history_depth = []
-        
 
         for player in all_players:
             for history, depth in histories:
-                if player == history[-1].next_state.current_player():
-                    legal_actions = history[-1].next_state.legal_actions()
+                if player == history.current_player():
+                    legal_actions = history.legal_actions()
                     if len(legal_actions) and depth < self.max_depth:
                         key = self._history_key(history, player)
                         if key not in self.history_lookup:
-                            assert(len(self.legal_actions_list)==len(self.history_depth))
+                            assert(len(self.legal_actions_list)
+                                   == len(self.history_depth))
                             history_index = len(self.legal_actions_list)
                             self.history_lookup[key] = history_index
                             self.legal_actions_list.append(legal_actions)
@@ -123,14 +132,14 @@ class TabularPolicy_Subgame(Policy):
             else:
                 self.leaf_dict[history.to_string()] = True
 
-
         self.action_probabilities_table = []
         for legal_actions in self.legal_actions_list:
-            self.action_probabilities_table.append([1/len(legal_actions)]*len(legal_actions))
+            self.action_probabilities_table.append(
+                [1/len(legal_actions)]*len(legal_actions))
 
     def get_prob(self, history, action):
         if not history.is_chance():
-            return self.policy_for_key(self._history_key(history,history.current_player()))[history.legal_actions().index(action)]        
+            return self.policy_for_key(self._history_key(history, history.current_player()))[history.legal_actions().index(action)]
         else:
             return history.chance_outcomes()[1][history.legal_actions().index(action)]
 
@@ -142,10 +151,11 @@ class TabularPolicy_Subgame(Policy):
         return self.action_probabilities_table[policy_index]
 
     def action_probabilities(self, history, player_id):
-        policy_index = self.history_lookup[self._history_key(history,history[-1].next_state.current_player())]
+        policy_index = self.history_lookup[self._history_key(
+            history, history.current_player())]
         policy = self.action_probabilities_table[policy_index]
         legal_actions = legal_actions_list[policy_index]
-        
+
         return {
             legal_actions[i]: policy[i]
             for i in range(len(legal_actions))
@@ -159,6 +169,5 @@ class TabularPolicy_Subgame(Policy):
         result.action_probabilities_table = self.action_probabilities_table
         result.game = self.game
         result.player_ids = self.player_ids
+        result.leaf_dict = self.leaf_dict
         return result
-
-
