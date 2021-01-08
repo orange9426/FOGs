@@ -7,10 +7,11 @@ import tqdm
 
 from solver.cfr.cfr import DepthLimited_CFR
 from policy.policy import TabularPolicy
+from policy.exploitability import exploitability
 
 env = 'KuhnPoker'
-buffer_capacity = 1000
-batch_size = 64
+buffer_capacity = 100
+batch_size = 16
 lr = 0.01
 layers_sizes = [128, 128]
 
@@ -66,10 +67,10 @@ class ReBeL(object):
                  buffer_capacity=buffer_capacity,
                  batch_size=batch_size,
                  lr=lr,
-                 min_buffer_size=100,
+                 min_buffer_size=32,
                  layers_sizes=layers_sizes,
                  max_depth=2,
-                 iteration_num=10,
+                 iteration_num=100,
                  learning_every=32):
         self.replay_buffer = ReplayBuffer(buffer_capacity)
         self.game = getattr(env_module, env)()
@@ -128,12 +129,16 @@ class ReBeL(object):
 
 def main():
     agents = ReBeL(env)
-    episode_num = 100
+    episode_num = 500
     for ep in tqdm.tqdm(range(episode_num)):
         while not agents.current_pbs.is_terminal():
             agents.step()
         agents.reset_episode()
-    print(agents.policy.action_probabilities_table)
+        if (ep+1) % 50 == 0:
+            expl = exploitability(agents.game, agents.policy)
+            print(expl) 
+    #print(agents.policy.action_probabilities_table)
+    agents.policy.print()
 
 
 if __name__ == '__main__':

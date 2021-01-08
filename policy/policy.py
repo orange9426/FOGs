@@ -50,16 +50,22 @@ class TabularPolicy(Policy):
         policy = self.action_probabilities_table[policy_index]
         legal_actions = self.legal_actions_list[policy_index]
 
-        return {
-            legal_actions[i]: policy[i]
-            for i in range(len(legal_actions))
-        }
+        # return {
+        #     legal_actions[i].to_string(): policy[i]
+        #     for i in range(len(legal_actions))
+        # }
+
+        return legal_actions, policy
 
     def set_subgame_policy(self, policy_sub):
         for key in policy_sub.history_lookup.keys():
             history_index = self.history_lookup[key]
             history_index_sub = policy_sub.history_lookup[key]
             self.action_probabilities_table[history_index] = policy_sub.action_probabilities_table[history_index_sub]
+
+    def print(self):
+        for key in self.history_lookup.keys():
+            print(key + ': ', self.action_probabilities_table[self.history_lookup[key]])
 
     def __copy__(self):
         result = TabularPolicy.__new__(TabularPolicy)

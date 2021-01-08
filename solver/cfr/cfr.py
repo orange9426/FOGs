@@ -2,6 +2,8 @@ from policy.policy import TabularPolicy
 from policy.policy import TabularPolicy_Subgame
 from solver.solver import Solver
 from env.public_belief_state import PublicBeliefState
+#from test.exploitability import BRPolicy
+from policy import exploitability as expl
 
 import torch
 import numpy as np
@@ -188,11 +190,14 @@ class CFR(Solver):
 
     def train_policy(self):
         """Solve the entire game for one epoch."""
-        self.iterations = 10
+        self.iterations = 100
         # print(self.current_policy().action_probabilities_table)
         for i in range(self.iterations):
             self.evaluate_and_update_policy()
+            if i % 50 == 4:
+                print(expl.exploitability(self._game, self.average_policy()))
         print(self.average_policy().action_probabilities_table)
+        self.average_policy().print()
         return self._average_policy
 
 
