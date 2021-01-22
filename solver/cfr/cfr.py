@@ -313,7 +313,7 @@ class DepthLimited_CFR(Solver):
             else:
                 info_state = history.get_info_state(
                 )[history.current_player()].to_string()
-                policy = self._average_policy.policy_for_key(info_state)
+                policy = self._current_policy.policy_for_key(info_state)
                 i = np.random.choice(np.arange(len(policy)), p=policy)
                 action = history.legal_actions()[i]
                 history = history.child(action)
@@ -321,6 +321,10 @@ class DepthLimited_CFR(Solver):
         pbs = self.initial_pbs
         for action in action_list:
             pbs = pbs.child(action, self._average_policy)
+        prob_dict = pbs.prob_dict
+        l = len(prob_dict)
+        prob_dict = {k: (v+1e-4)/(1+l*1e-4) for k,v in prob_dict.items()}
+        pbs = PublicBeliefState(pbs.public_state, prob_dict)
         return pbs
 
     def _compute_counterfactual_regret_for_player(self, history, reach_probabilities, player):
@@ -423,8 +427,11 @@ class DepthLimited_CFR(Solver):
 
     def train_policy(self):
         """Solve the entire game for one epoch."""
+        t_samp = np.random.randint(self.iteration_num)
         for i in range(self.iteration_num):
             self.set_leaf_values(self.initial_pbs)
             self.evaluate_and_update_policy()
+            if i == t_samp:
+                self.next_pbs = self.sample_pbs()
 
         return self.average_policy()

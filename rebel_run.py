@@ -10,8 +10,8 @@ from policy.policy import TabularPolicy
 from policy.exploitability import exploitability
 
 env = 'KuhnPoker'
-buffer_capacity = 100
-batch_size = 16
+buffer_capacity = 500
+batch_size = 32
 lr = 0.01
 layers_sizes = [128, 128]
 
@@ -67,7 +67,7 @@ class ReBeL(object):
                  buffer_capacity=buffer_capacity,
                  batch_size=batch_size,
                  lr=lr,
-                 min_buffer_size=32,
+                 min_buffer_size=80,
                  layers_sizes=layers_sizes,
                  max_depth=2,
                  iteration_num=100,
@@ -98,10 +98,13 @@ class ReBeL(object):
                                   self.current_pbs,
                                   max_depth=self.max_depth,
                                   iteration_num=self.iteration_num)
+        # if self.current_pbs != self.game.initial_pbs():
+        #     #print("Ckpt")
         policy_sub = solver.train_policy()
         self.policy.set_subgame_policy(policy_sub)
-        self.replay_buffer.add(solver.get_training_data())
-        self.current_pbs = solver.sample_pbs()
+        if self.current_pbs != self.game.initial_pbs():
+            self.replay_buffer.add(solver.get_training_data())
+        self.current_pbs = solver.next_pbs
         self.count += 1
 
         if self.count % self.learning_every == 0:
@@ -129,7 +132,7 @@ class ReBeL(object):
 
 def main():
     agents = ReBeL(env)
-    episode_num = 500
+    episode_num = 1000
     for ep in tqdm.tqdm(range(episode_num)):
         while not agents.current_pbs.is_terminal():
             agents.step()
