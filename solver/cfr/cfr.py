@@ -433,5 +433,6 @@ class DepthLimited_CFR(Solver):
             self.evaluate_and_update_policy()
             if i == t_samp:
                 self.next_pbs = self.sample_pbs()
+                self.belief_policy = self._current_policy.__copy__()
 
         return self.average_policy()

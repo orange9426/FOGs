@@ -8,6 +8,7 @@ import tqdm
 from solver.cfr.cfr import DepthLimited_CFR
 from policy.policy import TabularPolicy
 from policy.exploitability import exploitability
+from policy.lbr import LBRagent
 
 env = 'KuhnPoker'
 buffer_capacity = 500
@@ -129,6 +130,82 @@ class ReBeL(object):
         if self.current_pbs.is_terminal():
             self.current_pbs = self.game.initial_pbs()
 
+    def test_lbr(self, index=0, num_ep=100):  # index of LBRagent
+        for episode in range(num_ep):
+            current_pbs = self.game.initial_pbs()
+            # initial chance
+            history = self.game.initial_history()
+            action = np.random.choice(history.chance_outcomes()[
+                                                0], p=history.chance_outcomes()[1])
+            # history after deal
+            history = history.child(action)
+            # use tabular_policy for now
+            policy = self.policy
+            test_agent = LBRagent(self.game, idx, history.get_info_state(), policy)
+
+            solver = DepthLimited_CFR(self.game,
+                                      self.value_net,
+                                      current_pbs,
+                                      max_depth=self.max_depth,
+                                      iteration_num=self.iteration_num)
+            policy_sub = solver.train_policy()
+            while not history.is_terminal():
+                while not history.is_terminal() and not solver._current_policy.leaf_dict[history.to_string()]:
+                    action_ls = []
+                    if history.current_player() == index:
+                        action = test_agent.step(history)  #TODO: step
+                        history = history.child(action)
+                    elif history.is_chance():
+                        action = np.random.choice(history.chance_outcomes()[
+                                                0], p=history.chance_outcomes()[1])
+                        history = history.child(action)
+                    else:
+                        info_state = history.get_info_state()[history.current_player()].to_string()
+                        policy = policy_sub.policy_for_key(info_state)
+                        i = np.random.choice(np.arange(len(policy)), p=policy)
+                        action = history.legal_actions()[i]
+                        history = history.child(action)
+                    action_ls.append(action)
+                    test_agent.modify_range(action)
+                    #nfo_state = history.get_info_state()[history.current_player()].to_string()
+                if history.is_terminal():
+                    break
+                belief_policy = solver.belief_policy
+                for action in action_ls:
+                    current_pbs = current_pbs.child(action, belief_policy)
+                solver = DepthLimited_CFR(self.game,
+                                      self.value_net,
+                                      current_pbs,
+                                      max_depth=self.max_depth,
+                                      iteration_num=self.iteration_num)
+                policy_sub = solver.train_policy() 
+            reward_0 += history.get_return() * (2 * index - 1)
+        return reward_0 / num_ep
+
+    def recursive_set_policy(self):
+        policy = TabularPolicy(self.game)
+        pbs = self.game.initial_pbs()
+        compute_policy(policy, pbs)
+        return policy
+
+    def compute_policy(self, policy, pbs): # search for every history
+        if pbs.is_terminal():
+            return
+        solver = DepthLimited_CFR(self.game,
+                                  self.value_net,
+                                  pbs,
+                                  max_depth=self.max_depth,
+                                  iteration_num=self.iteration_num)
+        policy_sub = solver.train_policy()
+        policy.set_subgame_policy(policy_sub)
+        for action in pbs.legal_actions():
+            self.compute_policy(policy, pbs.child(action, solver.current_policy()))
+
+
+
+
+
+
 
 def main():
     agents = ReBeL(env)
@@ -140,6 +217,8 @@ def main():
         if (ep+1) % 50 == 0:
             expl = exploitability(agents.game, agents.policy)
             print(expl) 
+            # expl = (agents.test_lbr(index=0) + agents.test_lbr(index=1)) / 2
+            # print(expl)
     #print(agents.policy.action_probabilities_table)
     agents.policy.print()
 

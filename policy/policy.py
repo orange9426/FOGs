@@ -67,6 +67,12 @@ class TabularPolicy(Policy):
         for key in self.history_lookup.keys():
             print(key + ': ', self.action_probabilities_table[self.history_lookup[key]])
 
+    def get_prob(self, history, action):
+        if not history.is_chance():
+            return self.policy_for_key(self._history_key(history, history.current_player()))[history.legal_actions().index(action)]
+        else:
+            return history.chance_outcomes()[1][history.legal_actions().index(action)]
+
     def __copy__(self):
         result = TabularPolicy.__new__(TabularPolicy)
         result.history_lookup = self.history_lookup
