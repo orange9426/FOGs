@@ -1,7 +1,7 @@
 import env.environment as e
 from env.leduc_poker.leduc_poker_char import *
-from util.step_record import StepRecord
 from env.public_belief_state import PublicBeliefState
+from util.step_record import StepRecord
 
 import numpy as np
 import copy

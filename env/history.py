@@ -148,6 +148,10 @@ class InformationState(list):
 
         return self._public_state
 
+    @property
+    def pot(self):
+        return self[-1][-1].pot
+
     def to_string(self):
         def str_fun(item):
             if isinstance(item, tuple):
