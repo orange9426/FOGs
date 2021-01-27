@@ -7,7 +7,7 @@ class LBRagent(object): # Only for Hold'em
         self._histories = self._infostate.get_all_histories()
         self._opponent_range = [1 / len(self._histories) for k in self._histories] # uniform chance
         self._opponent_policy = opponent_policy
-
+ 
     def modify_range(self, action):
         current_player = self._histories[0].current_player()
         if current_player == self._idx or current_player == -1:

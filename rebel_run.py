@@ -10,7 +10,8 @@ from policy.policy import TabularPolicy
 from policy.exploitability import exploitability
 from policy.lbr import LBRagent
 
-env = 'KuhnPoker'
+env = 'TexasHoldem'
+#env = 'KuhnPoker'
 buffer_capacity = 500
 batch_size = 32
 lr = 0.01
@@ -76,6 +77,7 @@ class ReBeL(object):
         self.replay_buffer = ReplayBuffer(buffer_capacity)
         self.game = getattr(env_module, env)()
         self.current_pbs = self.game.initial_pbs()
+        print("initial PBS got!")
         self.max_depth = max_depth
         self.count = 0
         self.learning_every = learning_every
@@ -83,6 +85,7 @@ class ReBeL(object):
         self.lr = lr
         self.iteration_num = iteration_num
         self.policy = TabularPolicy(self.game)
+        print("initial Table got!")
 
         dinp = self.game.get_tensor(self.current_pbs).size()[0]
         dout = len(self.current_pbs.prob_dict)
@@ -132,6 +135,7 @@ class ReBeL(object):
 
     def test_lbr(self, index=0, num_ep=100):  # index of LBRagent
         for episode in range(num_ep):
+            print(episode)
             current_pbs = self.game.initial_pbs()
             # initial chance
             history = self.game.initial_history()
@@ -209,16 +213,19 @@ class ReBeL(object):
 
 def main():
     agents = ReBeL(env)
+    print("Yeah!")
+    expl = (agents.test_lbr(index=0) + agents.test_lbr(index=1)) / 2
+    print(expl)
     episode_num = 1000
     for ep in tqdm.tqdm(range(episode_num)):
         while not agents.current_pbs.is_terminal():
             agents.step()
         agents.reset_episode()
         if (ep+1) % 50 == 0:
-            expl = exploitability(agents.game, agents.policy)
-            print(expl) 
-            # expl = (agents.test_lbr(index=0) + agents.test_lbr(index=1)) / 2
-            # print(expl)
+            # expl = exploitability(agents.game, agents.policy)
+            # print(expl) 
+            expl = (agents.test_lbr(index=0) + agents.test_lbr(index=1)) / 2
+            print(expl)
     #print(agents.policy.action_probabilities_table)
     agents.policy.print()
 
